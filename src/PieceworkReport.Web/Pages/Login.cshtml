@@ -1,0 +1,37 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "登录";
+    ViewData["LoginPage"] = true;
+}
+
+<div class="login-shell">
+    <section class="login-panel">
+        <div class="brand-mark">计</div>
+        <p class="eyebrow">PIECEWORK CONTROL</p>
+        <h1>计件工资管理</h1>
+        <p class="muted">录入产量、维护价格、核算工资。</p>
+
+        <form method="post" class="stack-form">
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+            }
+            <div>
+                <label asp-for="Input.Username" class="form-label">用户名</label>
+                <input asp-for="Input.Username" class="form-control" autocomplete="username" autofocus />
+                <span asp-validation-for="Input.Username" class="field-error"></span>
+            </div>
+            <div>
+                <label asp-for="Input.Password" class="form-label">密码</label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Input.Password" class="field-error"></span>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">登录</button>
+        </form>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

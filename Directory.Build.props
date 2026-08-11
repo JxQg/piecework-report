@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <Version>2.1.0</Version>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <FileVersion>2.1.0.0</FileVersion>
+    <Product>PieceworkReport</Product>
+    <Company>PieceworkReport</Company>
+    <Authors>PieceworkReport</Authors>
+    <Copyright>Copyright (c) 2026 PieceworkReport</Copyright>
+    <BuildDateUtc Condition="'$(BuildDateUtc)' == ''">unknown</BuildDateUtc>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="BuildDateUtc" Value="$(BuildDateUtc)" />
+  </ItemGroup>
+</Project>

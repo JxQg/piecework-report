@@ -1,0 +1,9 @@
+@page
+@model MachinesModel
+@{ ViewData["Title"] = "机器管理"; }
+<div class="page-heading"><div><p class="eyebrow">MASTER DATA</p><h1>机器管理</h1><p>机器编码由系统连续生成且不复用。</p></div></div>
+@if (!string.IsNullOrWhiteSpace(Model.FlashMessage)) { <div class="alert alert-success">@Model.FlashMessage</div> }
+<div class="form-layout"><section class="section-block"><div class="section-heading"><div><h2>@(Model.Input.Id == 0 ? "新增机器" : "编辑机器")</h2></div></div>
+<form method="post" asp-page-handler="Save" class="stack-form"><input asp-for="Input.Id" type="hidden" /><div asp-validation-summary="ModelOnly" class="field-error"></div><div><label class="form-label">机器编码</label><input value="@Model.Input.Code" class="form-control" readonly /></div><div><label asp-for="Input.Name" class="form-label">机器名称</label><input asp-for="Input.Name" class="form-control" /></div><label class="form-check"><input asp-for="Input.IsActive" class="form-check-input" /> 在用</label><div class="action-row"><button class="btn btn-primary">保存</button><a asp-page="/Machines" class="btn btn-outline-secondary">清空</a></div></form></section>
+<section class="section-block"><div class="section-heading"><div><h2>机器列表</h2><p>@Model.Machines.Count 台机器</p></div></div><div class="table-responsive"><table class="data-table"><thead><tr><th>编码</th><th>名称</th><th>状态</th><th></th></tr></thead><tbody>@foreach(var item in Model.Machines){<tr class="@(!item.IsActive ? "is-inactive" : "")"><td>@item.Code</td><td><strong>@item.Name</strong></td><td>@(item.IsActive ? "在用" : "停用")</td><td class="actions"><a asp-route-editId="@item.Id" class="btn btn-sm btn-outline-secondary">编辑</a></td></tr>}</tbody></table></div></section></div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

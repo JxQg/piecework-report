@@ -1,0 +1,23 @@
+@page
+@model EmployeesModel
+@{ ViewData["Title"] = "员工管理"; }
+<div class="page-heading"><div><p class="eyebrow">MASTER DATA</p><h1>员工管理</h1><p>维护计件员工及在用状态。</p></div></div>
+@if (!string.IsNullOrWhiteSpace(Model.FlashMessage)) { <div class="alert alert-success">@Model.FlashMessage</div> }
+<div class="form-layout">
+    <section class="section-block form-panel">
+        <div class="section-heading"><div><h2>@(Model.Input.Id == 0 ? "新增员工" : "编辑员工")</h2><p>已建立的员工编码保持不变。</p></div></div>
+        <form method="post" asp-page-handler="Save" class="stack-form">
+            <input asp-for="Input.Id" type="hidden" /><div asp-validation-summary="ModelOnly" class="field-error"></div>
+            <div><label asp-for="Input.Code" class="form-label">员工编码</label><input asp-for="Input.Code" class="form-control" readonly="@(Model.Input.Id != 0)" /></div>
+            <div><label asp-for="Input.Name" class="form-label">姓名</label><input asp-for="Input.Name" class="form-control" /></div>
+            <label class="form-check"><input asp-for="Input.IsActive" class="form-check-input" /> 在用</label>
+            <div class="action-row"><button class="btn btn-primary" type="submit">保存</button><a asp-page="/Employees" class="btn btn-outline-secondary">清空</a></div>
+        </form>
+    </section>
+    <section class="section-block"><div class="section-heading"><div><h2>员工列表</h2><p>@Model.Employees.Count 名员工</p></div></div>
+        <div class="table-responsive"><table class="data-table"><thead><tr><th>编码</th><th>姓名</th><th>状态</th><th></th></tr></thead><tbody>
+        @foreach (var item in Model.Employees) { <tr class="@(!item.IsActive ? "is-inactive" : "")"><td>@item.Code</td><td><strong>@item.Name</strong></td><td>@(item.IsActive ? "在用" : "停用")</td><td class="actions"><a asp-route-editId="@item.Id" class="btn btn-sm btn-outline-secondary">编辑</a></td></tr> }
+        </tbody></table></div>
+    </section>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

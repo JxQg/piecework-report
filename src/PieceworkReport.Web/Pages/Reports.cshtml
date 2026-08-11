@@ -1,0 +1,57 @@
+@page
+@model ReportsModel
+@{
+    ViewData["Title"] = "工资报表";
+}
+
+<div class="page-heading">
+    <div><p class="eyebrow">PAYROLL REPORT</p><h1>工资报表</h1><p>预算偏差用于观察，实际工资按计件结果发放。</p></div>
+    @if (Model.Periods.Count > 0){<form method="get" class="period-picker"><select name="periodId" class="form-select" onchange="this.form.submit()">@foreach(var period in Model.Periods){<option value="@period.Id" selected="@(period.Id == Model.SelectedPeriod?.Id)">@period.DisplayName</option>}</select></form>}
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+@if (Model.SelectedPeriod is null || Model.Report is null)
+{
+    <section class="empty-state"><h2>尚未创建工资月份</h2></section>
+}
+else
+{
+    <section class="report-strip">
+        <div><span>预算</span><strong>¥@Model.SelectedPeriod.Budget.ToString("N2")</strong></div>
+        <div><span>计件工资</span><strong>¥@Model.Report.PieceworkTotal.ToString("N2")</strong></div>
+        <div><span>计件偏差</span><strong class="@(Model.Report.PieceworkVariance > 0 ? "text-alert" : "text-positive")">@(Model.Report.PieceworkVariance >= 0 ? "+" : string.Empty)¥@Model.Report.PieceworkVariance.ToString("N2")</strong></div>
+        <div><span>工资增项</span><strong>¥@Model.Report.AdjustmentTotal.ToString("N2")</strong></div>
+        <div><span>最终工资</span><strong>¥@Model.Report.FinalTotal.ToString("N2")</strong></div>
+    </section>
+
+    @if (Model.Report.Issues.Count > 0)
+    {
+        <div class="validation-list"><strong>暂时不能导出：</strong><ul>@foreach(var issue in Model.Report.Issues.Take(30)){<li>@issue.Message</li>}</ul></div>
+    }
+
+    <section class="split-layout report-layout">
+        <div class="section-block">
+            <div class="section-heading">
+                <div><h2>员工月工资</h2><p>@Model.Report.EmployeeRows.Count 名员工</p></div>
+                @if (User.IsInRole("Manager"))
+                {
+                    <form method="post" asp-page-handler="Export"><input type="hidden" name="periodId" value="@Model.SelectedPeriod.Id" /><button class="btn btn-primary" type="submit" disabled="@(Model.Report.Issues.Count > 0)">导出 Excel</button></form>
+                }
+            </div>
+            <div class="table-responsive"><table class="data-table"><thead><tr><th>员工</th><th class="number">计件工资</th><th class="number">增项</th><th class="number">最终工资</th></tr></thead><tbody>
+            @foreach(var row in Model.Report.EmployeeRows){<tr><td><strong>@row.EmployeeName</strong><small>@row.EmployeeCode</small></td><td class="number">@row.PieceworkWage.ToString("N2")</td><td class="number">@row.AdjustmentAmount.ToString("N2")</td><td class="number total">@row.TotalWage.ToString("N2")</td></tr>}
+            </tbody></table></div>
+        </div>
+        <aside class="section-block status-panel">
+            <div class="section-heading"><div><h2>导出历史</h2><p>数据修改后旧版本会保留</p></div></div>
+            @if (Model.Snapshots.Count == 0){<div class="empty-inline">尚未导出</div>}
+            else
+            {
+                <div class="snapshot-list">
+                @foreach(var item in Model.Snapshots){<a asp-page="/Reports" asp-page-handler="Download" asp-route-snapshotId="@item.Id"><div><strong>版本 @item.Version</strong><small>@item.CreatedAt.ToString("yyyy-MM-dd HH:mm") · @item.CreatedBy</small></div><span>下载</span></a>}
+                </div>
+            }
+        </aside>
+    </section>
+}

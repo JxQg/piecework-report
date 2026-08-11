@@ -1,0 +1,11 @@
+@page
+@{
+    ViewData["Title"] = "权限不足";
+}
+
+<section class="empty-state">
+    <p class="eyebrow">ACCESS DENIED</p>
+    <h1>无法访问此页面</h1>
+    <p>当前账号没有该功能权限。如需查看金额、计价或工资报表，请使用经理账号。</p>
+    <a asp-page="/Index" class="btn btn-primary">返回总览</a>
+</section>

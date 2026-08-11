@@ -1,0 +1,61 @@
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var path = Context.Request.Path.Value ?? string.Empty;
+}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · 计件工资管理</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="@(isAuthenticated ? "app-body" : "login-body")">
+@if (isAuthenticated)
+{
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a asp-page="/Index" class="sidebar-brand" aria-label="计件工资管理首页">
+                <span class="brand-mark small-mark">计</span>
+                <span><strong>计件工资</strong><small>Piecework Control</small></span>
+            </a>
+            <nav class="nav-stack" aria-label="主导航">
+                <a asp-page="/Index" class="@(path == "/" || path.StartsWith("/Index") ? "active" : string.Empty)">总览</a>
+                <a asp-page="/Production" class="@(path.StartsWith("/Production") ? "active" : string.Empty)">每日计件</a>
+                <a asp-page="/Imports" class="@(path.StartsWith("/Imports") ? "active" : string.Empty)">Excel 导入</a>
+                <span class="nav-label">基础资料</span>
+                <a asp-page="/Employees" class="@(path.StartsWith("/Employees") ? "active" : string.Empty)">员工</a>
+                <a asp-page="/Machines" class="@(path.StartsWith("/Machines") ? "active" : string.Empty)">机器</a>
+                <a asp-page="/Materials" class="@(path.StartsWith("/Materials") ? "active" : string.Empty)">物料</a>
+                <a asp-page="/Specifications" class="@(path.StartsWith("/Specifications") ? "active" : string.Empty)">物料规格</a>
+                @if (User.IsInRole("Manager"))
+                {
+                    <span class="nav-label">经理设置</span>
+                    <a asp-page="/Periods" class="@(path.StartsWith("/Periods") ? "active" : string.Empty)">工资月份</a>
+                    <a asp-page="/Pricing" class="@(path.StartsWith("/Pricing") ? "active" : string.Empty)">经理计价</a>
+                    <a asp-page="/Adjustments" class="@(path.StartsWith("/Adjustments") ? "active" : string.Empty)">工资增项</a>
+                    <a asp-page="/Reports" class="@(path.StartsWith("/Reports") ? "active" : string.Empty)">工资报表</a>
+                }
+            </nav>
+            <div class="sidebar-account">
+                <div><strong>@User.Identity?.Name</strong><small>@(User.IsInRole("Manager") ? "经理" : "文员")</small></div>
+                <form method="post" asp-page="/Login" asp-page-handler="Logout"><button type="submit" class="btn btn-sm btn-outline-light">退出</button></form>
+            </div>
+        </aside>
+        <div class="workspace">
+            <main class="page-container" role="main">@RenderBody()</main>
+            <footer class="app-footer">计件工资管理 · 本地数据每日自动备份</footer>
+        </div>
+    </div>
+}
+else
+{
+    <main role="main">@RenderBody()</main>
+}
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
