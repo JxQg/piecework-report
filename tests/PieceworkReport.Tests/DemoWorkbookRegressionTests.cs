@@ -1,7 +1,6 @@
 using ClosedXML.Excel;
 using PieceworkReport.Core.Services;
 using PieceworkReport.Web.Services;
-using Xunit.Sdk;
 
 namespace PieceworkReport.Tests;
 
@@ -11,8 +10,7 @@ public sealed class DemoWorkbookRegressionTests
     public void FirstThreeSheets_ReproduceDailyAndMonthlyNewWages()
     {
         var sourcePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "2026年7月份计件表7.31.xlsx"));
-        if (!File.Exists(sourcePath))
-            throw SkipException.ForSkip("未提供本地原始计件工作簿，跳过非版本化业务数据回归测试。");
+        Assert.True(File.Exists(sourcePath));
         using var workbook = new XLWorkbook(sourcePath); var allKeys = new HashSet<string>(StringComparer.Ordinal); var materialNames = new HashSet<string>(StringComparer.Ordinal); var lineCount = 0;
         var sheets = workbook.Worksheets.Take(3).ToList();
         Assert.Equal(3, sheets.Count);

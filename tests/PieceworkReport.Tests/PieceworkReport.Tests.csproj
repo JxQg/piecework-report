@@ -7,6 +7,7 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <DemoWorkbookPath Condition="'$(DemoWorkbookPath)' == ''">$(MSBuildProjectDirectory)\..\..\2026年7月份计件表7.31.xlsx</DemoWorkbookPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PieceworkReport.Web\PieceworkReport.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!Exists('$(DemoWorkbookPath)')">
+    <Compile Remove="DemoWorkbookRegressionTests.cs" />
   </ItemGroup>
 
 </Project>
