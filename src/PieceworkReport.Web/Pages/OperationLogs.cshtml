@@ -1,0 +1,5 @@
+@page
+@model OperationLogsModel
+@{ ViewData["Title"] = "操作记录"; }
+<div class="page-heading"><div><p class="eyebrow">MANAGER ONLY</p><h1>操作记录</h1><p>保留最近 200 条业务和账号操作，用于核对数据变更。</p></div></div>
+<section class="section-block"><div class="table-responsive"><table class="data-table"><thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>详情</th></tr></thead><tbody>@foreach (var entry in Model.Entries) { <tr><td>@entry.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td><td>@entry.Username</td><td>@entry.EventType</td><td>@entry.Detail</td></tr> }</tbody></table></div></section>

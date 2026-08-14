@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PieceworkReport.Core.Data;
+using PieceworkReport.Core.Services;
 using PieceworkReport.Web.Services;
 
 namespace PieceworkReport.Web.Pages;
@@ -10,7 +11,9 @@ namespace PieceworkReport.Web.Pages;
 public sealed class SpecificationsModel(
     AppDbContext db,
     CodeGenerationService codes,
-    ExportInvalidationService invalidation) : PageModel
+    ExportInvalidationService invalidation,
+    BusinessDataDeletionService deletionService,
+    OperationAuditService operationAuditService) : PageModel
 {
     public IReadOnlyList<Material> Materials { get; private set; } = [];
     public IReadOnlyList<Machine> Machines { get; private set; } = [];
@@ -81,10 +84,27 @@ public sealed class SpecificationsModel(
         foreach (var link in links) link.IsActive = activeMachineIds.Contains(link.MachineId);
         foreach (var machineId in activeMachineIds.Where(id => links.All(x => x.MachineId != id)))
             db.MachineSpecifications.Add(new MachineSpecification { MachineId = machineId, MaterialSpecificationId = entity.Id, IsActive = true });
+        operationAuditService.Record(Input.Id == 0 ? "新增物料规格" : "修改物料规格", User.Identity?.Name ?? "unknown", $"规格 {entity.Code} · {entity.Description}");
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
         FlashMessage = $"规格 {entity.Code} 已保存。";
         return RedirectToPage(new { editId = entity.Id, materialId = entity.MaterialId });
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(int id, int? materialId)
+    {
+        var result = await deletionService.DeleteSpecificationAsync(id);
+        if (!result.IsDeleted)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage!);
+            await LoadAsync(materialId);
+            return Page();
+        }
+
+        operationAuditService.Record("删除物料规格", User.Identity?.Name ?? "unknown", $"规格 ID {id}");
+        await db.SaveChangesAsync();
+        FlashMessage = "物料规格已删除。";
+        return RedirectToPage(new { materialId });
     }
 
     private async Task LoadAsync(int? materialId)

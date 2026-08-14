@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PieceworkReport.Core.Data;
+using PieceworkReport.Core.Services;
 
 namespace PieceworkReport.Web.Pages;
 
-public sealed class EmployeesModel(AppDbContext db) : PageModel
+public sealed class EmployeesModel(AppDbContext db, BusinessDataDeletionService deletionService, OperationAuditService operationAuditService) : PageModel
 {
     public IReadOnlyList<Employee> Employees { get; private set; } = [];
     [BindProperty] public EmployeeInput Input { get; set; } = new();
@@ -39,9 +40,20 @@ public sealed class EmployeesModel(AppDbContext db) : PageModel
             employee.Name = Input.Name;
             employee.IsActive = Input.IsActive;
         }
+        operationAuditService.Record(Input.Id == 0 ? "新增员工" : "修改员工", User.Identity?.Name ?? "unknown", $"员工 {employee.Code} · {employee.Name}");
         await db.SaveChangesAsync();
         FlashMessage = $"员工 {employee.Name} 已保存。";
         return RedirectToPage(new { editId = employee.Id });
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(int id)
+    {
+        var result = await deletionService.DeleteEmployeeAsync(id);
+        if (!result.IsDeleted) { ModelState.AddModelError(string.Empty, result.ErrorMessage!); await LoadAsync(); return Page(); }
+        operationAuditService.Record("删除员工", User.Identity?.Name ?? "unknown", $"员工 ID {id}");
+        await db.SaveChangesAsync();
+        FlashMessage = "员工已删除。";
+        return RedirectToPage();
     }
 
     private async Task LoadAsync() => Employees = await db.Employees.AsNoTracking().OrderBy(x => x.Code).ToListAsync();

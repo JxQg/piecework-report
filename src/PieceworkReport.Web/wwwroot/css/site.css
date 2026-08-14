@@ -103,7 +103,9 @@ small { color: var(--ink-soft); }
 .override-editor { grid-template-columns: minmax(220px, 1fr) minmax(160px, .6fr) auto; }
 .production-v2-editor { grid-template-columns: 150px 170px minmax(330px, 2fr) 140px minmax(180px, 1fr) auto; }
 .check-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 14px; padding: 12px; border: 1px solid var(--line); background: var(--surface-muted); }
-.day-grid { display: grid; grid-template-columns: repeat(7, minmax(48px, 1fr)); gap: 7px; }
+.calendar-weekdays, .day-grid { display: grid; grid-template-columns: repeat(7, minmax(40px, 1fr)); gap: 7px; }
+.calendar-weekdays { margin-bottom: 7px; color: var(--ink-soft); font-size: .75rem; font-weight: 700; text-align: center; }
+.calendar-blank { min-height: 52px; border: 1px solid transparent; }
 .day-check { position: relative; margin: 0; }
 .day-check input { position: absolute; opacity: 0; pointer-events: none; }
 .day-check span { min-height: 52px; display: grid; place-items: center; padding: 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); cursor: pointer; font-weight: 700; }
@@ -180,7 +182,7 @@ small { color: var(--ink-soft); }
   .period-picker, .date-picker { width: 100%; }
   .period-picker .form-select, .period-picker .form-control { min-width: 0; flex: 1; }
   .kpi-grid, .two-cols, .pricing-editor, .production-editor, .adjustment-editor, .material-editor, .pricing-form, .production-v2-editor, .override-editor, .check-grid, .report-strip { grid-template-columns: 1fr; }
-  .day-grid { grid-template-columns: repeat(4, minmax(48px, 1fr)); }
+  .calendar-weekdays, .day-grid { grid-template-columns: repeat(7, minmax(40px, 1fr)); gap: 4px; }
   .kpi-card { min-height: 106px; }
   .section-block { padding: 15px; }
   .inline-editor .editor-actions { grid-column: 1; }

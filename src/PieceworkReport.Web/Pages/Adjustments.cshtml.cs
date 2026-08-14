@@ -4,11 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PieceworkReport.Core.Data;
+using PieceworkReport.Core.Services;
 
 namespace PieceworkReport.Web.Pages;
 
 [Authorize(Roles = "Manager")]
-public sealed class AdjustmentsModel(AppDbContext db) : PageModel
+public sealed class AdjustmentsModel(AppDbContext db, OperationAuditService operationAuditService) : PageModel
 {
     public IReadOnlyList<WagePeriod> Periods { get; private set; } = [];
     public WagePeriod? SelectedPeriod { get; private set; }
@@ -18,7 +19,14 @@ public sealed class AdjustmentsModel(AppDbContext db) : PageModel
     [BindProperty] public AdjustmentInput Input { get; set; } = new();
     [TempData] public string? FlashMessage { get; set; }
 
-    public async Task OnGetAsync(int? periodId) => await LoadAsync(periodId);
+    public async Task OnGetAsync(int? periodId, int? editId)
+    {
+        await LoadAsync(periodId);
+        if (editId is null || SelectedPeriod is null) return;
+        var entity = await db.PayAdjustments.AsNoTracking().SingleOrDefaultAsync(x => x.Id == editId && x.WagePeriodId == SelectedPeriod.Id);
+        if (entity is null) return;
+        Input = new AdjustmentInput { Id = entity.Id, PeriodId = entity.WagePeriodId, EmployeeId = entity.EmployeeId, AdjustmentDate = entity.AdjustmentDate, Category = entity.Category, Amount = entity.Amount, Note = entity.Note };
+    }
 
     public async Task<IActionResult> OnPostSaveAsync()
     {
@@ -35,30 +43,54 @@ public sealed class AdjustmentsModel(AppDbContext db) : PageModel
             await LoadAsync(Input.PeriodId);
             return Page();
         }
-
-        db.PayAdjustments.Add(new PayAdjustment
+        if (!await db.Employees.AnyAsync(x => x.Id == Input.EmployeeId && x.IsActive))
         {
-            WagePeriodId = period.Id,
-            EmployeeId = Input.EmployeeId,
-            AdjustmentDate = Input.AdjustmentDate.Date,
-            Category = Input.Category.Trim(),
-            Amount = Input.Amount,
-            Note = string.IsNullOrWhiteSpace(Input.Note) ? null : Input.Note.Trim(),
-            UpdatedBy = User.Identity?.Name ?? "unknown"
-        });
+            ModelState.AddModelError("Input.EmployeeId", "员工无效或已停用。");
+            await LoadAsync(Input.PeriodId);
+            return Page();
+        }
+
+        PayAdjustment entity;
+        if (Input.Id == 0)
+        {
+            entity = new PayAdjustment { WagePeriodId = period.Id, Category = Input.Category.Trim(), UpdatedBy = User.Identity?.Name ?? "unknown" };
+            db.PayAdjustments.Add(entity);
+        }
+        else
+        {
+            var existing = await db.PayAdjustments.SingleOrDefaultAsync(x => x.Id == Input.Id && x.WagePeriodId == period.Id);
+            if (existing is null)
+            {
+                ModelState.AddModelError(string.Empty, "工资增项不存在或不属于当前工资月份。");
+                await LoadAsync(Input.PeriodId);
+                return Page();
+            }
+            entity = existing;
+        }
+        entity.EmployeeId = Input.EmployeeId;
+        entity.AdjustmentDate = Input.AdjustmentDate.Date;
+        entity.Category = Input.Category.Trim();
+        entity.Amount = Input.Amount;
+        entity.Note = string.IsNullOrWhiteSpace(Input.Note) ? null : Input.Note.Trim();
+        entity.UpdatedBy = User.Identity?.Name ?? "unknown";
+        entity.UpdatedAt = DateTime.Now;
         period.ExportOutdated = true;
         period.UpdatedAt = DateTime.Now;
+        operationAuditService.Record(Input.Id == 0 ? "新增工资增项" : "修改工资增项", User.Identity?.Name ?? "unknown", $"工资月份 {period.DisplayName}，增项 ID {entity.Id}");
         await db.SaveChangesAsync();
-        FlashMessage = "工资增项已添加。";
+        FlashMessage = Input.Id == 0 ? "工资增项已添加。" : "工资增项已修改。";
         return RedirectToPage(new { periodId = period.Id });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id, int periodId)
     {
-        var entity = await db.PayAdjustments.SingleAsync(x => x.Id == id && x.WagePeriodId == periodId);
+        var entity = await db.PayAdjustments.SingleOrDefaultAsync(x => x.Id == id && x.WagePeriodId == periodId);
+        if (entity is null) return NotFound();
         db.PayAdjustments.Remove(entity);
         var period = await db.WagePeriods.SingleAsync(x => x.Id == periodId);
         period.ExportOutdated = true;
+        period.UpdatedAt = DateTime.Now;
+        operationAuditService.Record("删除工资增项", User.Identity?.Name ?? "unknown", $"工资月份 {period.DisplayName}，增项 ID {id}");
         await db.SaveChangesAsync();
         return RedirectToPage(new { periodId });
     }
@@ -81,6 +113,7 @@ public sealed class AdjustmentsModel(AppDbContext db) : PageModel
 
     public sealed class AdjustmentInput
     {
+        public int Id { get; set; }
         [Range(1, int.MaxValue)] public int PeriodId { get; set; }
         [Range(1, int.MaxValue)] public int EmployeeId { get; set; }
         [DataType(DataType.Date)] public DateTime AdjustmentDate { get; set; }

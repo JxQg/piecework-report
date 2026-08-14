@@ -16,7 +16,7 @@
     </section>
     <section class="section-block"><div class="section-heading"><div><h2>员工列表</h2><p>@Model.Employees.Count 名员工</p></div></div>
         <div class="table-responsive"><table class="data-table"><thead><tr><th>编码</th><th>姓名</th><th>状态</th><th></th></tr></thead><tbody>
-        @foreach (var item in Model.Employees) { <tr class="@(!item.IsActive ? "is-inactive" : "")"><td>@item.Code</td><td><strong>@item.Name</strong></td><td>@(item.IsActive ? "在用" : "停用")</td><td class="actions"><a asp-route-editId="@item.Id" class="btn btn-sm btn-outline-secondary">编辑</a></td></tr> }
+        @foreach (var item in Model.Employees) { <tr class="@(!item.IsActive ? "is-inactive" : "")"><td>@item.Code</td><td><strong>@item.Name</strong></td><td>@(item.IsActive ? "在用" : "停用")</td><td class="actions"><a asp-route-editId="@item.Id" class="btn btn-sm btn-outline-secondary">编辑</a><form method="post" asp-page-handler="Delete" onsubmit="return confirm('确定删除该员工？已有业务记录的员工只能停用。')"><input type="hidden" name="id" value="@item.Id" /><button class="btn btn-sm btn-outline-danger" type="submit">删除</button></form></td></tr> }
         </tbody></table></div>
     </section>
 </div>

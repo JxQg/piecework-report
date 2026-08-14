@@ -19,6 +19,8 @@ var applicationPaths = new ApplicationPaths(dataDirectory);
 applicationPaths.EnsureDirectories();
 
 builder.Services.AddSingleton(applicationPaths);
+builder.Services.AddScoped<OperationAuditService>();
+builder.Services.AddScoped<BusinessDataDeletionService>();
 var dataProtection = builder.Services.AddDataProtection()
     .SetApplicationName(ProductInformation.ProductName)
     .PersistKeysToFileSystem(new DirectoryInfo(applicationPaths.KeyDirectory));

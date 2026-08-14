@@ -3,11 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PieceworkReport.Core.Data;
+using PieceworkReport.Core.Services;
 using PieceworkReport.Web.Services;
 
 namespace PieceworkReport.Web.Pages;
 
-public sealed class MachinesModel(AppDbContext db, CodeGenerationService codes, ExportInvalidationService invalidation) : PageModel
+public sealed class MachinesModel(AppDbContext db, CodeGenerationService codes, ExportInvalidationService invalidation, BusinessDataDeletionService deletionService, OperationAuditService operationAuditService) : PageModel
 {
     public IReadOnlyList<Machine> Machines { get; private set; } = [];
     [BindProperty] public MachineInput Input { get; set; } = new();
@@ -26,9 +27,17 @@ public sealed class MachinesModel(AppDbContext db, CodeGenerationService codes, 
         Machine entity;
         if (Input.Id == 0) { entity = new Machine { Code = await codes.NextMachineCodeAsync(), Name = Input.Name, IsActive = Input.IsActive }; db.Machines.Add(entity); }
         else { entity = await db.Machines.SingleAsync(x => x.Id == Input.Id); entity.Name = Input.Name; entity.IsActive = Input.IsActive; await invalidation.ForMachineAsync(entity.Id); }
+        operationAuditService.Record(Input.Id == 0 ? "新增机器" : "修改机器", User.Identity?.Name ?? "unknown", $"机器 {entity.Code} · {entity.Name}");
         await db.SaveChangesAsync();
         FlashMessage = $"机器 {entity.Code} 已保存。";
         return RedirectToPage(new { editId = entity.Id });
+    }
+    public async Task<IActionResult> OnPostDeleteAsync(int id)
+    {
+        var result = await deletionService.DeleteMachineAsync(id);
+        if (!result.IsDeleted) { ModelState.AddModelError(string.Empty, result.ErrorMessage!); await LoadAsync(); return Page(); }
+        operationAuditService.Record("删除机器", User.Identity?.Name ?? "unknown", $"机器 ID {id}");
+        await db.SaveChangesAsync(); FlashMessage = "机器已删除。"; return RedirectToPage();
     }
     private async Task LoadAsync() => Machines = await db.Machines.AsNoTracking().OrderBy(x => x.Code).ToListAsync();
     public sealed class MachineInput { public int Id { get; set; } public string Code { get; set; } = "保存后自动生成"; [Required, MaxLength(80)] public string Name { get; set; } = string.Empty; public bool IsActive { get; set; } = true; }

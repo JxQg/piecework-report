@@ -65,6 +65,8 @@ dotnet run --project tools/PieceworkReport.DemoBuilder/PieceworkReport.DemoBuild
 - 工资表快照：`C:\ProgramData\PieceworkReport\data\exports\`
 - 启动器日志：`C:\ProgramData\PieceworkReport\logs\`
 
+系统日志仅由启动器保存，按日期写入 `logs\web-YYYYMMDD.log`。WebUI 的“操作记录”仅保存业务和账号变更，不能替代系统日志。
+
 正式安装包不包含业务数据库。升级只替换 Program Files 中的程序文件，数据库迁移前自动备份；卸载默认保留 ProgramData 中的正式数据。
 
 ## 发布安装包
@@ -72,7 +74,9 @@ dotnet run --project tools/PieceworkReport.DemoBuilder/PieceworkReport.DemoBuild
 需要 .NET SDK 和 Inno Setup 6：
 
 ```powershell
-pwsh -NoProfile -File packaging/build-release.ps1 -Version 2.1.0
+pwsh -NoProfile -File packaging/build-release.ps1 -Version 2.2.0
 ```
 
-输出为 `artifacts/installer/PieceworkReport-Setup-2.1.0.exe`。安装器面向 Windows x64、需要管理员授权，并为专用网络添加 Web 入站防火墙规则。
+输出为 `artifacts/installer/PieceworkReport-Setup-2.2.0.exe`。安装器面向 Windows x64、需要管理员授权，并为专用网络添加 Web 入站防火墙规则。
+
+推送符合 `vMAJOR.MINOR.PATCH` 格式的 Git 标签（例如 `v2.1.1`）会触发 GitHub Actions：在 Windows 环境运行同一发布脚本，并将安装器及其 SHA-256 校验文件发布到对应 GitHub Release。

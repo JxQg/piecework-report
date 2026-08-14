@@ -28,6 +28,7 @@ public sealed class PricingMathTests
         var specification = new MaterialSpecification { Code = "P000001-S0001", Description = "两扣", BuckleCount = 2m, Material = null! };
         Assert.Equal(0.875m, PricingMath.PieceRate(rule, specification, 1_000m));
         Assert.Equal(0.5m, PricingMath.AttainmentRate(250m, specification, 1_000m));
+        Assert.Equal(0.26m, PricingMath.BuckleRate(260m, 1_000m));
     }
 
     [Theory]

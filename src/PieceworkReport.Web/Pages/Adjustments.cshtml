@@ -19,6 +19,7 @@ else
 {
     <section class="section-block entry-strip">
         <form method="post" asp-page-handler="Save" class="inline-editor adjustment-editor">
+            <input asp-for="Input.Id" type="hidden" />
             <input asp-for="Input.PeriodId" type="hidden" />
             <div asp-validation-summary="ModelOnly" class="field-error full-row"></div>
             <div><label asp-for="Input.AdjustmentDate">日期</label><input asp-for="Input.AdjustmentDate" class="form-control" /></div>
@@ -26,13 +27,13 @@ else
             <div><label asp-for="Input.Category">增项类别</label><input asp-for="Input.Category" class="form-control" placeholder="例如：设备调试补贴" /></div>
             <div><label asp-for="Input.Amount">金额</label><input asp-for="Input.Amount" class="form-control" step="0.01" /></div>
             <div><label asp-for="Input.Note">说明</label><input asp-for="Input.Note" class="form-control" /></div>
-            <div class="editor-actions"><button class="btn btn-primary" type="submit">添加增项</button></div>
+            <div class="editor-actions"><button class="btn btn-primary" type="submit">@(Model.Input.Id == 0 ? "添加增项" : "保存修改")</button>@if(Model.Input.Id != 0){<a asp-route-periodId="@Model.SelectedPeriod.Id" class="btn btn-outline-secondary">取消编辑</a>}</div>
         </form>
     </section>
     <section class="section-block">
         <div class="section-heading"><div><h2>@Model.SelectedPeriod.DisplayName 增项明细</h2><p>合计 ¥@Model.Adjustments.Sum(x => x.Amount).ToString("N2")</p></div></div>
         <div class="table-responsive"><table class="data-table"><thead><tr><th>日期</th><th>员工</th><th>类别</th><th>说明</th><th class="number">金额</th><th></th></tr></thead><tbody>
-        @foreach(var item in Model.Adjustments){<tr><td>@item.AdjustmentDate.ToString("yyyy-MM-dd")</td><td><strong>@item.Employee.Name</strong><small>@item.Employee.Code</small></td><td>@item.Category</td><td>@item.Note</td><td class="number total">@item.Amount.ToString("N2")</td><td class="actions"><form method="post" asp-page-handler="Delete" onsubmit="return confirm('确定删除这条增项？')"><input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="periodId" value="@Model.SelectedPeriod.Id" /><button class="btn btn-sm btn-outline-danger" type="submit">删除</button></form></td></tr>}
+        @foreach(var item in Model.Adjustments){<tr><td>@item.AdjustmentDate.ToString("yyyy-MM-dd")</td><td><strong>@item.Employee.Name</strong><small>@item.Employee.Code</small></td><td>@item.Category</td><td>@item.Note</td><td class="number total">@item.Amount.ToString("N2")</td><td class="actions"><a asp-route-periodId="@Model.SelectedPeriod.Id" asp-route-editId="@item.Id" class="btn btn-sm btn-outline-secondary">编辑</a><form method="post" asp-page-handler="Delete" onsubmit="return confirm('确定删除这条增项？')"><input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="periodId" value="@Model.SelectedPeriod.Id" /><button class="btn btn-sm btn-outline-danger" type="submit">删除</button></form></td></tr>}
         </tbody></table></div>
     </section>
 }

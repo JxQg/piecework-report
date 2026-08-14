@@ -13,9 +13,10 @@ public static class PricingMath
         employeeOverride?.TargetBuckleCount ?? rule.DefaultTargetBuckleCount ?? 0m;
 
     public static decimal BuckleRate(PricingRule rule, decimal targetBuckleCount) =>
-        rule.Mode == PricingMode.AttainmentBased && targetBuckleCount > 0
-            ? (rule.TargetDailyWage ?? 0m) / targetBuckleCount
-            : 0m;
+        BuckleRate(rule.TargetDailyWage ?? 0m, targetBuckleCount);
+
+    public static decimal BuckleRate(decimal targetDailyWage, decimal targetBuckleCount) =>
+        targetBuckleCount > 0 ? targetDailyWage / targetBuckleCount : 0m;
 
     public static decimal PieceRate(PricingRule rule, MaterialSpecification specification, decimal targetBuckleCount) =>
         rule.Mode == PricingMode.DirectPieceRate

@@ -13,7 +13,9 @@ public sealed class ReportsModel(
     AppDbContext db,
     WageCalculationService calculationService,
     ExcelService excelService,
-    ApplicationPaths paths) : PageModel
+    ApplicationPaths paths,
+    OperationAuditService operationAuditService,
+    ILogger<ReportsModel> logger) : PageModel
 {
     public IReadOnlyList<WagePeriod> Periods { get; private set; } = [];
     public WagePeriod? SelectedPeriod { get; private set; }
@@ -35,9 +37,8 @@ public sealed class ReportsModel(
             var period = await db.WagePeriods.SingleAsync(x => x.Id == periodId);
             var version = (await db.ExportSnapshots.Where(x => x.WagePeriodId == periodId).MaxAsync(x => (int?)x.Version) ?? 0) + 1;
             var fileName = $"{period.Year}年{period.Month}月计件工资-v{version}.xlsx";
-            var exportDirectory = Path.Combine(paths.DataDirectory, "exports");
-            Directory.CreateDirectory(exportDirectory);
-            await System.IO.File.WriteAllBytesAsync(Path.Combine(exportDirectory, fileName), package.Content);
+            Directory.CreateDirectory(paths.ExportDirectory);
+            await System.IO.File.WriteAllBytesAsync(Path.Combine(paths.ExportDirectory, fileName), package.Content);
 
             db.ExportSnapshots.Add(new ExportSnapshot
             {
@@ -49,6 +50,7 @@ public sealed class ReportsModel(
                 CreatedBy = User.Identity?.Name ?? "unknown"
             });
             period.ExportOutdated = false;
+            operationAuditService.Record("导出工资报表", User.Identity?.Name ?? "unknown", $"工资月份 {period.DisplayName}，版本 {version}");
             await db.SaveChangesAsync();
             return File(package.Content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
@@ -64,9 +66,40 @@ public sealed class ReportsModel(
     {
         var snapshot = await db.ExportSnapshots.AsNoTracking().SingleOrDefaultAsync(x => x.Id == snapshotId);
         if (snapshot is null) return NotFound();
-        var path = Path.Combine(paths.DataDirectory, "exports", snapshot.FileName);
+        var path = GetSnapshotPath(snapshot.FileName);
         if (!System.IO.File.Exists(path)) return NotFound();
         return File(await System.IO.File.ReadAllBytesAsync(path), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", snapshot.FileName);
+    }
+
+    public async Task<IActionResult> OnPostDeleteSnapshotAsync(int snapshotId, int periodId)
+    {
+        var snapshot = await db.ExportSnapshots.SingleOrDefaultAsync(x => x.Id == snapshotId && x.WagePeriodId == periodId);
+        if (snapshot is null) return NotFound();
+        var path = GetSnapshotPath(snapshot.FileName);
+        try
+        {
+            if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+        }
+        catch (IOException exception)
+        {
+            logger.LogError(exception, "Failed to delete export snapshot file {FileName}.", snapshot.FileName);
+            ModelState.AddModelError(string.Empty, "导出文件正在使用，无法删除。请关闭文件后重试。");
+            await LoadAsync(periodId);
+            return Page();
+        }
+
+        db.ExportSnapshots.Remove(snapshot);
+        operationAuditService.Record("删除工资报表导出", User.Identity?.Name ?? "unknown", $"工资月份 ID {periodId}，导出版本 {snapshot.Version}");
+        await db.SaveChangesAsync();
+        return RedirectToPage(new { periodId });
+    }
+
+    private string GetSnapshotPath(string fileName)
+    {
+        var exportRoot = Path.GetFullPath(paths.ExportDirectory) + Path.DirectorySeparatorChar;
+        var path = Path.GetFullPath(Path.Combine(paths.ExportDirectory, fileName));
+        if (!path.StartsWith(exportRoot, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("导出文件路径无效。");
+        return path;
     }
 
     private async Task LoadAsync(int? periodId)

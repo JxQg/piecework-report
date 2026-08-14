@@ -53,8 +53,8 @@ internal sealed class MainForm : Form
         ForeColor = UiStyle.Ink;
         StartPosition = FormStartPosition.CenterScreen;
         AutoScaleMode = AutoScaleMode.Dpi;
-        MinimumSize = new Size(900, 650);
-        ClientSize = new Size(980, 720);
+        MinimumSize = new Size(960, 690);
+        ClientSize = new Size(1020, 750);
 
         Controls.Add(BuildTabs(schemaVersion));
         Controls.Add(BuildHeader());
@@ -75,18 +75,19 @@ internal sealed class MainForm : Form
 
     private Control BuildHeader()
     {
-        var header = new Panel { Dock = DockStyle.Top, Height = 92, BackColor = UiStyle.Surface, Padding = new Padding(28, 18, 28, 14) };
+        var header = new Panel { Dock = DockStyle.Top, Height = 98, BackColor = UiStyle.Surface, Padding = new Padding(28, 18, 28, 16) };
         var title = new Label { Text = "计件工资管理", AutoSize = true, Font = new Font(Font.FontFamily, 18F, FontStyle.Bold), ForeColor = UiStyle.Ink, Location = new Point(28, 16) };
-        var subtitle = new Label { Text = $"启动器 {ProductInformation.Version} · 本机局域网服务", AutoSize = true, ForeColor = UiStyle.Muted, Location = new Point(30, 54) };
-        _stateLabel.AutoSize = true; _stateLabel.Font = new Font(Font.FontFamily, 11F, FontStyle.Bold); _stateLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right; _stateLabel.Location = new Point(ClientSize.Width - 150, 33);
-        header.Resize += (_, _) => _stateLabel.Location = new Point(header.ClientSize.Width - _stateLabel.Width - 30, 34);
-        header.Controls.AddRange([title, subtitle, _stateLabel]);
+        var subtitle = new Label { Text = $"启动器 {ProductInformation.Version} · 本机局域网服务", AutoSize = true, ForeColor = UiStyle.Muted, Location = new Point(30, 57) };
+        var status = new Panel { Dock = DockStyle.Right, Width = 160 };
+        _stateLabel.AutoSize = false; _stateLabel.Dock = DockStyle.Fill; _stateLabel.TextAlign = ContentAlignment.MiddleRight; _stateLabel.Font = new Font(Font.FontFamily, 11F, FontStyle.Bold);
+        status.Controls.Add(_stateLabel);
+        header.Controls.AddRange([title, subtitle, status]);
         return header;
     }
 
     private Control BuildTabs(int schemaVersion)
     {
-        var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(18, 8), Font = new Font(Font.FontFamily, 10F) };
+        var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(18, 10), Font = new Font(Font.FontFamily, 10F) };
         tabs.TabPages.Add(BuildServiceTab());
         tabs.TabPages.Add(BuildAccountTab());
         tabs.TabPages.Add(BuildVersionTab(schemaVersion));
@@ -96,7 +97,7 @@ internal sealed class MainForm : Form
     private TabPage BuildServiceTab()
     {
         var page = NewTab("服务与访问");
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(26), ColumnCount = 2, RowCount = 7 };
+        var layout = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, Padding = UiStyle.PagePadding, ColumnCount = 2, RowCount = 7 };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170)); layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         AddRow(layout, 0, "本机访问", _localAddress);
         _localAddress.ReadOnly = true; _localAddress.Dock = DockStyle.Fill;
@@ -106,27 +107,27 @@ internal sealed class MainForm : Form
         AddRow(layout, 2, "服务端口", _port);
         _autoStartCheck.Text = "Windows 登录后进入托盘并自动启动服务"; _autoStartCheck.AutoSize = true;
         AddRow(layout, 3, "开机启动", _autoStartCheck);
-        var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 14, 0, 8) };
+        var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = UiStyle.SectionMargin, Padding = new Padding(0, 0, 0, 4) };
         actions.Controls.AddRange([_startButton, _stopButton, _openButton, _copyButton, _qrButton]);
         layout.Controls.Add(actions, 0, 4); layout.SetColumnSpan(actions, 2);
         var save = UiStyle.PrimaryButton("保存端口与启动设置"); save.Click += async (_, _) => await SaveServiceSettingsAsync();
-        var settingsActions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 8, 0, 8) }; settingsActions.Controls.Add(save);
+        var settingsActions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 4, 0, 4) }; settingsActions.Controls.Add(save);
         layout.Controls.Add(settingsActions, 0, 5); layout.SetColumnSpan(settingsActions, 2);
-        _errorLabel.AutoSize = true; _errorLabel.MaximumSize = new Size(800, 0); _errorLabel.ForeColor = UiStyle.Danger; _errorLabel.Margin = new Padding(0, 14, 0, 0);
+        _errorLabel.AutoSize = true; _errorLabel.MaximumSize = new Size(800, 0); _errorLabel.ForeColor = UiStyle.Danger; _errorLabel.Margin = new Padding(0, 12, 0, 0);
         layout.Controls.Add(_errorLabel, 0, 6); layout.SetColumnSpan(_errorLabel, 2);
         _startButton.Click += async (_, _) => await StartServiceAsync();
         _stopButton.Click += async (_, _) => await StopServiceWithAuthorizationAsync();
         _openButton.Click += async (_, _) => await OpenLocalAsync();
         _copyButton.Click += (_, _) => CopyLanUrl();
         _qrButton.Click += (_, _) => ShowQr();
-        page.Controls.Add(layout);
+        page.Controls.Add(ScrollableContent(layout));
         return page;
     }
 
     private TabPage BuildAccountTab()
     {
         var page = NewTab("账号管理");
-        var columns = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(26), ColumnCount = 2 };
+        var columns = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = UiStyle.PagePadding, ColumnCount = 2 };
         columns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50)); columns.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         columns.Controls.Add(BuildPasswordGroup("修改经理密码", [
             ("当前经理密码", _managerCurrent), ("新经理密码", _managerNew), ("确认新密码", _managerConfirm)
@@ -135,7 +136,7 @@ internal sealed class MainForm : Form
             ("经理密码", _clerkManager), ("文员新密码", _clerkNew), ("确认新密码", _clerkConfirm)
         ], "重置文员密码", ResetClerkPasswordAsync), 1, 0);
         var recovery = UiStyle.SecondaryButton("忘记经理密码：Windows 管理员恢复"); recovery.Click += async (_, _) => await StartRecoveryAsync();
-        var footer = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 64, Padding = new Padding(26, 10, 26, 10) }; footer.Controls.Add(recovery);
+        var footer = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 68, Padding = new Padding(28, 12, 28, 12) }; footer.Controls.Add(recovery);
         page.Controls.Add(columns); page.Controls.Add(footer);
         return page;
     }
@@ -143,7 +144,7 @@ internal sealed class MainForm : Form
     private TabPage BuildVersionTab(int schemaVersion)
     {
         var page = NewTab("版本与升级");
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30), ColumnCount = 2, RowCount = 7 };
+        var layout = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, Padding = UiStyle.PagePadding, ColumnCount = 2, RowCount = 7 };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170)); layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         AddRow(layout, 0, "当前程序版本", UiStyle.Label(ProductInformation.Version));
         AddRow(layout, 1, "数据库结构版本", UiStyle.Label(schemaVersion.ToString()));
@@ -154,20 +155,20 @@ internal sealed class MainForm : Form
         AddRow(layout, 4, "SHA-256", _candidateHash);
         var choose = UiStyle.SecondaryButton("选择安装包"); choose.Click += async (_, _) => await SelectUpdatePackageAsync();
         var upgrade = UiStyle.PrimaryButton("备份并升级"); upgrade.Click += async (_, _) => await UpgradeAsync();
-        var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 18, 0, 0) }; actions.Controls.AddRange([choose, upgrade]);
+        var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, Margin = UiStyle.SectionMargin, Padding = new Padding(0, 0, 0, 4) }; actions.Controls.AddRange([choose, upgrade]);
         layout.Controls.Add(actions, 0, 5); layout.SetColumnSpan(actions, 2);
         var note = UiStyle.Label("升级仅替换 Program Files 中的程序文件，C:\\ProgramData\\PieceworkReport\\data 不会被安装包覆盖。", true); note.MaximumSize = new Size(720, 0);
         layout.Controls.Add(note, 0, 6); layout.SetColumnSpan(note, 2);
-        page.Controls.Add(layout);
+        page.Controls.Add(ScrollableContent(layout));
         return page;
     }
 
     private GroupBox BuildPasswordGroup(string title, IReadOnlyList<(string Label, TextBox Input)> rows, string buttonText, Func<Task> action)
     {
-        var group = new GroupBox { Text = title, Dock = DockStyle.Fill, Padding = new Padding(20), Margin = new Padding(8) };
+        var group = new GroupBox { Text = title, Dock = DockStyle.Fill, Padding = new Padding(22, 26, 22, 22), Margin = new Padding(8, 6, 8, 6) };
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1 };
-        foreach (var row in rows) { layout.Controls.Add(UiStyle.Label(row.Label)); row.Input.Dock = DockStyle.Top; layout.Controls.Add(row.Input); }
-        var button = UiStyle.PrimaryButton(buttonText); button.Margin = new Padding(0, 20, 0, 0); button.Click += async (_, _) => await action();
+        foreach (var row in rows) { var label = UiStyle.Label(row.Label); label.Margin = new Padding(0, 0, 0, 4); layout.Controls.Add(label); row.Input.Dock = DockStyle.Top; row.Input.Margin = new Padding(0, 0, 0, 12); layout.Controls.Add(row.Input); }
+        var button = UiStyle.PrimaryButton(buttonText); button.Margin = new Padding(0, 10, 0, 0); button.Click += async (_, _) => await action();
         layout.Controls.Add(button); group.Controls.Add(layout); return group;
     }
 
@@ -423,7 +424,21 @@ internal sealed class MainForm : Form
     private static void Clear(IEnumerable<TextBox> boxes) { foreach (var box in boxes) box.Clear(); }
     private void Warn(string message) => MessageBox.Show(this, message, "计件工资管理", MessageBoxButtons.OK, MessageBoxIcon.Warning);
     private static TabPage NewTab(string text) => new(text) { BackColor = UiStyle.Background, Padding = new Padding(8) };
-    private static void AddRow(TableLayoutPanel layout, int row, string label, Control control) { layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); layout.Controls.Add(UiStyle.Label(label), 0, row); control.Margin = new Padding(0, 5, 0, 8); layout.Controls.Add(control, 1, row); }
+
+    private static Panel ScrollableContent(Control content)
+    {
+        var host = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
+        host.Controls.Add(content);
+        return host;
+    }
+
+    private static void AddRow(TableLayoutPanel layout, int row, string label, Control control)
+    {
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.Controls.Add(UiStyle.Label(label), 0, row);
+        control.Margin = UiStyle.FieldMargin;
+        layout.Controls.Add(control, 1, row);
+    }
 
     public async ValueTask DisposeManagerAsync()
     {

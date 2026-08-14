@@ -4,6 +4,9 @@ namespace PieceworkReport.Launcher.Ui;
 
 internal static class UiStyle
 {
+    public static readonly Padding PagePadding = new(28, 24, 28, 28);
+    public static readonly Padding FieldMargin = new(0, 4, 0, 12);
+    public static readonly Padding SectionMargin = new(0, 16, 0, 4);
     public static readonly Color Background = Color.FromArgb(244, 246, 243);
     public static readonly Color Surface = Color.White;
     public static readonly Color Ink = Color.FromArgb(30, 39, 34);
@@ -42,7 +45,7 @@ internal static class UiStyle
         Text = text,
         AutoSize = true,
         ForeColor = muted ? Muted : Ink,
-        Margin = new Padding(3, 8, 3, 4)
+        Margin = new Padding(0, 0, 16, 0)
     };
 
     public static TextBox PasswordBox() => new() { UseSystemPasswordChar = true, Width = 300 };
